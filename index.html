@@ -1,0 +1,1116 @@
+<!doctype html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --ink:#172033; --muted:#68758b; --line:#e5eaf2;
+      --blue:#2457d6; --shadow:0 18px 50px #1720331f;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(135deg,#edf4ff,#f8faff 50%,#edf8f7);font-family:Inter,system-ui,"Segoe UI",sans-serif;color:var(--ink)}
+    button,input,select{font:inherit}
+    .app-shell{display:flex;min-height:100vh}
+    .sidebar{width:250px;flex:0 0 250px;background:#12234a;color:#fff;padding:24px 14px;display:flex;flex-direction:column;gap:22px}
+    .brand{padding:4px 10px 18px;border-bottom:1px solid #ffffff22}
+    .brand-mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#4d7dff,#23bac2);display:grid;place-items:center;font-weight:900;margin-bottom:13px}
+    .brand h2{font-size:17px;margin:0}.brand p{font-size:11px;color:#b9c9ef;line-height:1.5;margin:7px 0 0}
+    .nav-label{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:#92a6d2;font-weight:900;padding:0 11px}
+    .sidebar nav{display:flex;flex-direction:column;gap:7px}
+    .nav-btn{width:100%;border:0;text-align:left;display:flex;align-items:center;gap:11px;border-radius:12px;padding:13px 12px;background:transparent;color:#dce6ff;font-size:12px;font-weight:800;cursor:pointer}
+    .nav-icon{width:28px;height:28px;flex:0 0 28px;border-radius:8px;display:grid;place-items:center;background:#ffffff14;font-size:15px}
+    .nav-btn.active{background:#ffffff1c;color:#fff;box-shadow:inset 3px 0 #5ee1dc}
+    .nav-btn.active .nav-icon{background:#2f61d7}
+    .sidebar-foot{margin-top:auto;font-size:10px;line-height:1.6;color:#a8b8dc;padding:10px}
+    .app-main{min-width:0;flex:1}.wrap{max-width:none;margin:0;padding:24px 25px 50px}
+    .hero{background:linear-gradient(120deg,#153b9b,#2457d6 60%,#18a4b8);color:#fff;padding:30px;border-radius:25px;box-shadow:var(--shadow);margin-bottom:20px}
+    .eyebrow{font-size:11px;letter-spacing:.14em;font-weight:800;opacity:.8}
+    .hero h1{margin:9px 0;font-size:clamp(26px,3vw,36px)}.hero p{margin:0;line-height:1.6;color:#e8f2ff}
+    .page-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}
+    .page-title h2{margin:0;font-size:24px}.page-title p{margin:6px 0 0;color:var(--muted);font-size:12px}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:23px;margin-bottom:20px;box-shadow:0 8px 30px #1b2d500d}
+    .head,.section-title{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:17px}
+    .panel h2,.section-title h2{font-size:20px;margin:0}
+    .sub{font-size:12px;color:var(--muted);line-height:1.55;margin-top:6px}
+    .badge{display:inline-block;border-radius:99px;padding:5px 9px;font-size:10px;font-weight:850;background:#e8efff;color:#234caa}
+    .badge.holiday{background:#fff0e2;color:#a8580b}
+    .form-grid{display:grid;grid-template-columns:1.7fr 1fr 1fr auto;gap:13px;align-items:end}
+    .field label{display:block;font-size:12px;font-weight:800;color:#536078;margin-bottom:8px}
+    .field input,.field select{width:100%;height:45px;border:1px solid #d8dfeb;border-radius:11px;padding:0 12px;background:#fff}
+    .field input[type=file]{padding:9px;background:#fbfcff}
+    .btn{border:0;border-radius:11px;padding:12px 16px;font-size:12px;font-weight:850;cursor:pointer;white-space:nowrap}
+    .primary{background:var(--blue);color:#fff;box-shadow:0 7px 16px #2457d633}
+    .secondary{background:#eaf0ff;color:#2047a5}.ghost{background:#f2f5fa;color:#46546d}
+    .danger{background:#fff0f0;color:#b42332}.btn:disabled{opacity:.55;cursor:wait}
+    .status{display:none;margin-top:15px;padding:12px 14px;border-radius:11px;font-size:12px;line-height:1.5}
+    .status.show{display:block}.info{background:#edf5ff;color:#214c9d}.error{background:#fff0f0;color:#a42e3b}.success{background:#eaf8f1;color:#176b4b}
+    .hidden{display:none!important}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+    .stat{background:#fff;border:1px solid var(--line);border-radius:17px;padding:17px;min-width:0}
+    .stat .k{font-size:12px;color:var(--muted);font-weight:700}
+    .stat .v{font-size:25px;font-weight:850;margin-top:7px;overflow-wrap:anywhere}
+    .stat .hint{font-size:11px;color:#8390a5;margin-top:4px}
+    .section-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .table-wrap{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:13px;position:relative;background:#fff}
+    table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;white-space:nowrap}
+    thead th{position:sticky;top:0;background:#f0f4fb;color:#526078;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:12px;border-bottom:1px solid var(--line);z-index:2;box-shadow:0 1px 0 #e5eaf2}
+    tbody td{padding:11px 12px;border-bottom:1px solid #edf0f5;background:#fff}
+    tbody tr:last-child td{border-bottom:0}tbody tr:hover td{background:#fafcff}
+    .num{text-align:center;font-variant-numeric:tabular-nums}
+    .hours{display:inline-block;padding:5px 8px;background:#e9f7f1;color:#16744f;border-radius:7px;font-weight:850}
+    .empty{padding:25px;text-align:center;color:var(--muted);font-size:12px}
+    .pagination-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 13px;border:1px solid var(--line);border-top:0;border-radius:0 0 13px 13px;background:#f8faff;font-size:11px;color:#68758b}
+    .pagination-left,.pagination-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .pagination-bar select{border:1px solid #d8dfeb;border-radius:8px;background:#fff;padding:7px 9px;color:#172033}
+    .page-btn{border:1px solid #dce3ef;background:#fff;border-radius:8px;padding:7px 10px;color:#34435d;font-weight:800;cursor:pointer}
+    .page-btn:disabled{opacity:.35;cursor:not-allowed}
+    .page-indicator{font-weight:800;color:#34435d}
+    .modal-bg{position:fixed;inset:0;background:#0c162b99;backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;padding:18px;z-index:10}
+    .modal-bg.open{display:flex}
+    .modal{background:#fff;width:min(1100px,100%);max-height:91vh;display:flex;flex-direction:column;border-radius:20px;overflow:hidden;box-shadow:0 30px 100px #0004}
+    .modal.small{width:min(900px,100%)}
+    .modal-head{display:flex;justify-content:space-between;gap:12px;padding:19px 23px;border-bottom:1px solid var(--line)}
+    .modal-head h2{font-size:19px;margin:7px 0 0}.modal-body{padding:19px 23px;overflow:auto}
+    .modal-foot{padding:15px 23px;border-top:1px solid var(--line);background:#fbfcff;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .close{width:35px;height:35px;border:0;border-radius:10px;background:#f0f3f8;font-size:22px;cursor:pointer}
+    .tiny{font-size:11px;color:var(--muted)}.check{width:16px;height:16px;accent-color:var(--blue)}
+    .day-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    .day-card{border:1px solid var(--line);border-radius:11px;padding:12px;display:flex;gap:10px;align-items:flex-start;background:#fff}
+    .day-card.selected{border-color:#8ba8ff;background:#f3f6ff}
+    .date-main{font-size:12px;font-weight:800}.date-meta{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6}
+    .day-hours{margin-left:auto;font-size:12px;font-weight:900;color:#13764d;white-space:nowrap}
+    .warning-list{font-size:12px;color:#915c14;line-height:1.7}
+    .adjustment{display:inline-block;margin-top:5px;padding:4px 7px;border-radius:7px;background:#fff0f0;color:#b42332;font-weight:900}
+    .history-list{display:grid;gap:10px}
+    .history-item{border:1px solid var(--line);border-radius:13px;padding:14px;display:flex;justify-content:space-between;gap:14px;align-items:center}
+    .history-item:hover{border-color:#b7c8f5;box-shadow:0 7px 20px #1720330b}
+    .history-item h3{font-size:13px;margin:0 0 6px;overflow-wrap:anywhere}
+    .history-meta{font-size:11px;color:var(--muted);line-height:1.7}
+    .history-actions{display:flex;gap:7px;flex-wrap:wrap}
+    .history-result-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+    .history-result-head h2{margin:0;font-size:20px}.history-result-head p{font-size:12px;color:var(--muted);margin:6px 0 0}
+    @media(max-width:850px){.form-grid{grid-template-columns:1fr 1fr}.file-field,.submit-field{grid-column:1/-1}.stats{grid-template-columns:repeat(2,1fr)}.panel{padding:17px}.day-list{grid-template-columns:1fr}}
+    @media(max-width:760px){.app-shell{display:block}.sidebar{width:auto;position:sticky;top:0;z-index:5;padding:10px;flex-direction:row;align-items:center;gap:10px}.brand{padding:0;border:0;display:flex;align-items:center;gap:8px;min-width:0}.brand-mark{margin:0;width:32px;height:32px;flex:0 0 32px}.brand h2{font-size:12px}.brand p,.nav-label,.sidebar-foot{display:none}.sidebar nav{flex-direction:row;gap:6px;margin-left:auto}.nav-btn{width:auto;padding:7px 9px;font-size:10px;gap:6px}.nav-btn .nav-icon{width:23px;height:23px}.wrap{padding:15px 12px 35px}}
+    @media(max-width:650px){.history-item{align-items:flex-start;flex-direction:column}.history-actions{width:100%}.history-actions .btn{flex:1}.history-result-head{flex-direction:column}}
+    @media(max-width:520px){.wrap{padding:13px}.form-grid{grid-template-columns:1fr}.file-field,.submit-field{grid-column:auto}.modal-bg{padding:7px}.modal-head,.modal-body,.modal-foot{padding:14px}.modal-foot{flex-direction:column-reverse;align-items:stretch}.modal-foot .btn{width:100%}.section-title{flex-direction:column}.pagination-bar{align-items:flex-start;flex-direction:column}}
+    @media(max-width:430px){.brand h2{max-width:74px}.nav-btn{padding:6px;font-size:9px}.nav-btn .nav-icon{display:none}}
+  </style>
+</head>
+
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">RL</div>
+      <div><h2>Rekap Lembur</h2><p>Sistem pengolahan presensi</p></div>
+    </div>
+    <div class="nav-label">Menu utama</div>
+    <nav>
+      <button id="navProcess" class="nav-btn active" onclick="showPage('process')">
+        <span class="nav-icon">▤</span><span>Proses Lembur</span>
+      </button>
+      <button id="navHistory" class="nav-btn" onclick="showPage('history')">
+        <span class="nav-icon">◷</span><span>History Proses Lembur</span>
+      </button>
+    </nav>
+    <div class="sidebar-foot">Rekap lembur pegawai<br>Riwayat tersimpan di Google Drive</div>
+  </aside>
+
+  <main class="app-main">
+    <div class="wrap">
+      <header class="hero">
+        <div class="eyebrow">ADMINISTRASI • PENGOLAHAN PRESENSI</div>
+        <h1>Rekap Lembur Pegawai</h1>
+        <p>Unggah presensi, tinjau kandidat, pilih pegawai dan tanggal lembur, lalu hasilkan rekap siap ditinjau.</p>
+      </header>
+
+      <div id="processPage">
+        <div class="page-title">
+          <div><h2>Proses Lembur</h2><p>Unggah presensi dan susun rekap lembur pegawai.</p></div>
+        </div>
+        <section class="panel">
+          <div class="head">
+            <div><h2>Proses data presensi</h2><div class="sub">Pilih file Excel Presensi Satker dan bulan/tahun yang akan diproses.</div></div>
+            <span class="badge">LANGKAH 1</span>
+          </div>
+          <div class="form-grid">
+            <div class="field file-field"><label for="file">File Excel (.xlsx / .xls)</label><input id="file" type="file" accept=".xlsx,.xls"></div>
+            <div class="field"><label for="month">Bulan</label><select id="month"></select></div>
+            <div class="field"><label for="year">Tahun</label><select id="year"></select></div>
+            <div class="submit-field"><button id="processBtn" class="btn primary" onclick="processFile()">Proses Data →</button></div>
+          </div>
+          <div id="status" class="status"></div>
+        </section>
+
+        <div id="results" class="hidden">
+          <div id="stats" class="stats"></div>
+          <section class="panel">
+            <div class="section-title">
+              <div><h2>Rincian Pegawai</h2><p>Hanya pegawai/tanggal yang disetujui akan masuk ke hasil akhir.</p></div>
+              <div class="section-actions">
+                <button class="btn secondary" onclick="openSelection()">Ubah Pilihan</button>
+                <button class="btn ghost" onclick="exportEmployees()">Ekspor CSV</button>
+              </div>
+            </div>
+            <div id="employeeTable" class="table-wrap"></div>
+          </section>
+          <section class="panel">
+            <div class="section-title">
+              <div><h2>Rekap untuk Backoffice</h2><p>Kolom HB/HL hanya ditampilkan jika berisi data. HB1 tidak ditampilkan.</p></div>
+              <button class="btn ghost" onclick="exportBackoffice()">Ekspor Backoffice CSV</button>
+            </div>
+            <div id="backofficeTable" class="table-wrap"></div>
+          </section>
+          <section class="panel">
+            <div class="section-title">
+              <div><h2>Rekap untuk WEB GAJI</h2><p>Kolom berisi tanggal dan nama hari; setiap sel berisi jam penuh lembur pada tanggal tersebut.</p></div>
+              <button class="btn ghost" onclick="exportWeb()">Ekspor WEB GAJI CSV</button>
+            </div>
+            <div id="webTable" class="table-wrap"></div>
+          </section>
+          <section id="warningArea" class="panel hidden"></section>
+        </div>
+      </div>
+
+      <div id="historyPage" class="hidden">
+        <div class="page-title">
+          <div><h2>History Proses Lembur</h2><p>Pilih riwayat untuk menampilkan kembali hasil rekap. Hapus riwayat yang tidak diperlukan.</p></div>
+          <button class="btn secondary" onclick="loadHistory()">Muat Ulang</button>
+        </div>
+        <section class="panel">
+          <div id="historyStatus" class="sub">Memuat daftar riwayat…</div>
+          <div id="historyList" class="history-list"></div>
+        </section>
+        <div id="historyResult" class="hidden">
+          <div class="panel">
+            <div class="history-result-head">
+              <div><h2 id="historyResultTitle">Hasil Riwayat</h2><p id="historyResultSub"></p></div>
+              <a id="historySheetLink" class="btn primary" href="#" target="_blank" rel="noopener">Buka Google Sheets ↗</a>
+            </div>
+          </div>
+          <div id="historyStats" class="stats"></div>
+          <section class="panel">
+            <div class="section-title"><div><h2>Rincian Pegawai</h2><p>Hasil yang tersimpan pada saat proses dilakukan.</p></div></div>
+            <div id="historyEmployeeTable" class="table-wrap"></div>
+          </section>
+          <section class="panel">
+            <div class="section-title"><div><h2>Rekap untuk Backoffice</h2></div></div>
+            <div id="historyBackofficeTable" class="table-wrap"></div>
+          </section>
+          <section class="panel">
+            <div class="section-title"><div><h2>Rekap untuk WEB GAJI</h2></div></div>
+            <div id="historyWebTable" class="table-wrap"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="selectionBg" class="modal-bg">
+  <div class="modal">
+    <div class="modal-head">
+      <div><span class="badge">LANGKAH 2</span><h2>Pilih pegawai dan tanggal lembur</h2><div id="selectionSub" class="sub"></div></div>
+      <button class="close" onclick="closeSelection()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="sub" style="margin:0 0 13px">Pilih pegawai lalu klik <b>Lihat rincian</b> untuk memilih tanggal yang dihitung. Kolom Jam Penuh menggunakan pembulatan ke bawah.</div>
+      <div id="candidateTable" class="table-wrap"></div>
+      <div id="selectionWarnings" class="hidden" style="margin-top:14px"></div>
+    </div>
+    <div class="modal-foot">
+      <div id="selectionCount" class="tiny"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost" onclick="closeSelection()">Batal</button>
+        <button id="saveBtn" class="btn primary" onclick="saveSelection()">Simpan Pilihan & Tampilkan Rekap →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="detailBg" class="modal-bg">
+  <div class="modal small">
+    <div class="modal-head">
+      <div><h2 id="detailTitle">Rincian Kandidat</h2><div id="detailSub" class="sub"></div></div>
+      <button class="close" onclick="closeDetail()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:13px">
+        <label id="selectAllLabel" class="tiny"><input id="selectAll" class="check" type="checkbox" onchange="toggleAll(this.checked)"> Pilih semua tanggal yang memenuhi syarat</label>
+        <span id="detailTotal" class="badge"></span>
+      </div>
+      <div id="detailDays" class="day-list"></div>
+      <div class="sub">Hari kerja biasa dihitung setelah pukul 16.00 (Jumat 16.30), minimal 2 jam. Jam bruto dibulatkan ke bawah per tanggal; jika jam bruto 5 jam atau lebih dikurangi 1 jam, dan jam akhir maksimal 7 jam. Hari libur dihitung dari jam masuk hingga pulang. Hanya status WFOL yang dihitung.</div>
+    </div>
+    <div class="modal-foot"><span class="tiny">Periksa tanggal sebelum menyimpan.</span><button class="btn primary" onclick="closeDetail()">Selesai</button></div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// PASTE URL WEB APP APPS SCRIPT ANDA DI SINI
+// ==========================================
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxEvfANPOIeB61Pn0E9BDX63YhUY8PMungROFyqZiaP3SYfOJcswnc8urI3hc4RAUiQ/exec';
+
+// Fungsi Fetch Pengganti google.script.run
+async function fetchAppScript(action, payload = {}) {
+  const response = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action, payload })
+  });
+  const data = await response.json();
+  if (data && data.success === false) {
+    throw new Error(data.message || 'Terjadi kesalahan pada server.');
+  }
+  return data;
+}
+
+const MONTHS = [
+  'Januari','Februari','Maret','April','Mei','Juni',
+  'Juli','Agustus','September','Oktober','November','Desember'
+];
+
+let candidates = null;
+let finalData = null;
+let selections = {};
+let activeEmp = null;
+let detailMode = 'candidate';
+let deletingHistoryIds = new Set();
+
+function $(id){return document.getElementById(id)}
+
+function esc(v){
+  return String(v==null?'':v).replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function hours(n){return `${Number(n||0)} jam`}
+
+function showStatus(t,type='info'){
+  $('status').className='status show '+type;
+  $('status').textContent=t;
+}
+
+(function init(){
+  MONTHS.forEach((m,i)=>$('month').add(new Option(m,i+1)));
+  $('month').value=new Date().getMonth()+1;
+  const y=new Date().getFullYear();
+  for(let n=y-2;n<=y+2;n++)$('year').add(new Option(n,n));
+  $('year').value=y;
+  loadHistory();
+})();
+
+function setupTablePagination(table){
+  if(!table || table.dataset.paginationReady==='1')return;
+  const tbody=table.tBodies[0];
+  if(!tbody)return;
+  table.dataset.paginationReady='1';
+  const wrapper=table.parentElement;
+  if(!wrapper)return;
+
+  const rows=Array.from(tbody.rows);
+  const bar=document.createElement('div');
+  bar.className='pagination-bar';
+  const left=document.createElement('div');
+  left.className='pagination-left';
+
+  const label=document.createElement('label');
+  label.textContent='Tampilkan ';
+  const select=document.createElement('select');
+
+  [5,10,20,50,100].forEach(n=>{
+    const option=document.createElement('option');
+    option.value=String(n);
+    option.textContent=String(n);
+    select.appendChild(option);
+  });
+
+  select.value='5';
+  label.appendChild(select);
+  label.appendChild(document.createTextNode(' baris per halaman'));
+  left.appendChild(label);
+
+  const info=document.createElement('span');
+  info.className='pagination-info';
+  left.appendChild(info);
+
+  const right=document.createElement('div');
+  right.className='pagination-right';
+
+  const prev=document.createElement('button');
+  prev.type='button';
+  prev.className='page-btn';
+  prev.textContent='← Sebelumnya';
+
+  const pageLabel=document.createElement('span');
+  pageLabel.className='page-indicator';
+
+  const next=document.createElement('button');
+  next.type='button';
+  next.className='page-btn';
+  next.textContent='Berikutnya →';
+
+  right.append(prev,pageLabel,next);
+  bar.append(left,right);
+  wrapper.appendChild(bar);
+
+  let page=1;
+  let pageSize=5;
+
+  function draw(){
+    const total=rows.length;
+    const pages=Math.max(1,Math.ceil(total/pageSize));
+    page=Math.min(Math.max(1,page),pages);
+
+    rows.forEach((row,index)=>{
+      row.style.display=(index >= (page-1)*pageSize && index < page*pageSize)
+        ? '' : 'none';
+    });
+
+    const start=total ? (page-1)*pageSize+1 : 0;
+    const end=Math.min(page*pageSize,total);
+
+    info.textContent=total
+      ? `Menampilkan ${start}–${end} dari ${total} baris`
+      : 'Tidak ada data';
+
+    pageLabel.textContent=`Halaman ${page} dari ${pages}`;
+    prev.disabled=page<=1;
+    next.disabled=page>=pages;
+  }
+
+  select.addEventListener('change',()=>{
+    pageSize=Number(select.value)||5;
+    page=1;
+    draw();
+  });
+
+  prev.addEventListener('click',()=>{page--;draw()});
+  next.addEventListener('click',()=>{page++;draw()});
+
+  draw();
+}
+
+const tableObserver=new MutationObserver(mutations=>{
+  mutations.forEach(mutation=>{
+    mutation.addedNodes.forEach(node=>{
+      if(node.nodeType!==1)return;
+      if(node.matches && node.matches('table'))setupTablePagination(node);
+      if(node.querySelectorAll){
+        node.querySelectorAll('table').forEach(setupTablePagination);
+      }
+    });
+  });
+});
+
+tableObserver.observe(document.body,{childList:true,subtree:true});
+document.querySelectorAll('table').forEach(setupTablePagination);
+
+function showPage(page){
+  const isProcess=page==='process';
+  $('processPage').classList.toggle('hidden',!isProcess);
+  $('historyPage').classList.toggle('hidden',isProcess);
+  $('navProcess').classList.toggle('active',isProcess);
+  $('navHistory').classList.toggle('active',!isProcess);
+  if(!isProcess)loadHistory();
+}
+
+function processFile(){
+  const f=$('file').files[0];
+  if(!f){showStatus('Pilih file Excel terlebih dahulu.','error');return}
+  if(!window.XLSX){showStatus('Library pembaca Excel belum termuat. Muat ulang halaman.','error');return}
+
+  const b=$('processBtn');
+  b.disabled=true;
+  b.textContent='Memproses…';
+  const reader=new FileReader();
+
+  reader.onerror=()=>{
+    b.disabled=false;
+    b.textContent='Proses Data →';
+    showStatus('File tidak dapat dibaca.','error');
+  };
+
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const sn=wb.SheetNames.includes('Presensi Satker')
+        ? 'Presensi Satker'
+        : wb.SheetNames[0];
+
+      if(!sn)throw Error('Sheet Excel tidak ditemukan.');
+
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{
+        header:1,raw:false,defval:''
+      });
+
+      // MENGGUNAKAN FETCH API (PENGGANTI google.script.run)
+      fetchAppScript('processAttendance', {
+        rows,
+        year: Number($('year').value),
+        month: Number($('month').value),
+        fileName: f.name
+      }).then(r => {
+        b.disabled=false;
+        b.textContent='Proses Data →';
+
+        candidates=r;
+        finalData=null;
+        selections={};
+
+        (r.employees||[]).forEach(emp=>{
+          selections[String(emp.nip)]=[];
+        });
+
+        $('results').classList.add('hidden');
+        renderCandidates();
+        openSelection();
+
+        showStatus(
+          'Data terbaca. Pilih pegawai dan tanggal yang akan masuk rekap.',
+          'success'
+        );
+      }).catch(err => {
+        b.disabled=false;
+        b.textContent='Proses Data →';
+        showStatus(err.message||'Terjadi kesalahan.','error');
+      });
+    }catch(err){
+      b.disabled=false;
+      b.textContent='Proses Data →';
+      showStatus(err.message||'Format Excel tidak dapat dibaca.','error');
+    }
+  };
+
+  reader.readAsArrayBuffer(f);
+}
+
+function candidateMinutes(e){
+  return (e.details||[]).filter(d=>d.eligible)
+    .reduce((s,d)=>s+Number(d.overtimeMinutes||0),0);
+}
+
+function chosen(e){
+  return selections[String(e.nip)]||[];
+}
+
+function openSelection(){
+  if(!candidates)return;
+  $('selectionSub').textContent=
+    `${candidates.monthName} ${candidates.year} • ${candidates.fileName}`;
+  renderCandidates();
+  $('selectionBg').classList.add('open');
+}
+
+function closeSelection(){
+  $('selectionBg').classList.remove('open');
+}
+
+function renderCandidates(){
+  const es=candidates?.employees||[];
+
+  if(!es.length){
+    $('candidateTable').innerHTML=
+      '<div class="empty">Data pegawai tidak ditemukan.</div>';
+  }else{
+    $('candidateTable').innerHTML=
+      '<table><thead><tr><th>Pilih</th><th>NIP</th><th>Nama Pegawai</th>'+
+      '<th class="num">Hari Biasa</th><th class="num">Hari Libur</th>'+
+      '<th class="num">Total Kandidat</th><th class="num">Jam Penuh</th><th>Aksi</th>'+
+      '</tr></thead><tbody>'+
+      es.map((e,i)=>`
+        <tr>
+          <td><input type="checkbox" class="check candidateCheck" data-i="${i}"
+            ${chosen(e).length?'checked':''} onchange="toggleEmp(${i},this.checked)"></td>
+          <td>${esc(e.nip)}</td><td><b>${esc(e.name)}</b></td>
+          <td class="num">${e.candidateOrdinaryDays||0}</td>
+          <td class="num">${e.candidateHolidayDays||0}</td>
+          <td class="num">${(e.details||[]).filter(d=>d.eligible).length}</td>
+          <td class="num"><span class="hours">${hours(Math.floor(candidateMinutes(e)/60))}</span></td>
+          <td><button class="btn secondary" data-details="${i}" style="padding:8px 10px">Lihat rincian</button></td>
+        </tr>`).join('')+'</tbody></table>';
+  }
+
+  $('candidateTable').onclick=e=>{
+    const b=e.target.closest('[data-details]');
+    if(b)openDetail(Number(b.dataset.details));
+  };
+
+  const ws=candidates.warnings||[];
+  if(ws.length){
+    $('selectionWarnings').classList.remove('hidden');
+    $('selectionWarnings').innerHTML=
+      `<span class="badge holiday">${ws.length} catatan validasi</span><ul class="warning-list">${
+        ws.map(w=>`<li><b>${esc(w.name)}</b> — ${esc(w.date)}: ${esc(w.reason)}</li>`).join('')
+      }</ul>`;
+  }else{
+    $('selectionWarnings').classList.add('hidden');
+  }
+
+  updateCount();
+}
+
+function toggleEmp(i,checked){
+  const e=candidates.employees[i];
+  selections[String(e.nip)]=checked
+    ?(e.details||[]).filter(d=>d.eligible).map(d=>d.dateKey)
+    :[];
+  updateCount();
+}
+
+function updateCount(){
+  let ec=0,dc=0;
+
+  (candidates?.employees||[]).forEach(e=>{
+    if(chosen(e).length)ec++;
+    dc+=chosen(e).length;
+  });
+
+  $('selectionCount').textContent=
+    `${ec} pegawai dipilih • ${dc} tanggal dipilih`;
+
+  document.querySelectorAll('.candidateCheck').forEach(c=>{
+    c.checked=chosen(candidates.employees[Number(c.dataset.i)]).length>0;
+  });
+}
+
+function openDetail(i){
+  activeEmp=candidates.employees[i];
+  detailMode='candidate';
+  $('selectAllLabel').classList.remove('hidden');
+  $('detailTitle').textContent='Rincian Kandidat — '+activeEmp.name;
+  $('detailSub').textContent='NIP '+activeEmp.nip+' • pilih tanggal yang disetujui';
+
+  const ds=(activeEmp.details||[]).filter(d=>d.eligible);
+  const sel=new Set(chosen(activeEmp));
+  const mins=ds.reduce((s,d)=>s+Number(d.overtimeMinutes||0),0);
+
+  $('detailTotal').textContent=
+    `${ds.length} tanggal • ${hours(Math.floor(mins/60))}`;
+
+  $('detailDays').innerHTML=ds.length?ds.map(d=>`
+    <label class="day-card ${sel.has(d.dateKey)?'selected':''}">
+      <input class="check dayCheck" type="checkbox" data-date="${esc(d.dateKey)}"
+        ${sel.has(d.dateKey)?'checked':''}
+        onchange="toggleDate('${esc(d.dateKey)}',this.checked)">
+      <span style="flex:1">
+        <span class="date-main">${esc(d.dayName)}, ${esc(d.date)}</span>
+        <span class="date-meta">
+          ${d.holiday?'<span class="badge holiday">Hari libur</span>':'<span class="badge">Hari biasa</span>'}
+          <br>Masuk ${esc(d.checkIn||'—')} · Pulang ${esc(d.checkOut||'—')}
+        </span>
+      </span>
+      <span class="day-hours">${hours(Math.floor(d.overtimeMinutes/60))}</span>
+    </label>`).join('')
+    :'<div class="empty" style="grid-column:1/-1">Tidak ada tanggal yang memenuhi syarat.</div>';
+
+  $('selectAll').checked=ds.length>0&&ds.every(d=>sel.has(d.dateKey));
+  $('detailBg').classList.add('open');
+}
+
+function toggleDate(k,checked){
+  const s=new Set(chosen(activeEmp));
+  checked?s.add(k):s.delete(k);
+  selections[String(activeEmp.nip)]=Array.from(s);
+
+  const c=[...document.querySelectorAll('.dayCheck')]
+    .find(x=>x.dataset.date===k);
+
+  if(c)c.closest('.day-card').classList.toggle('selected',checked);
+
+  const ds=(activeEmp.details||[]).filter(d=>d.eligible);
+  $('selectAll').checked=ds.length>0&&ds.every(d=>s.has(d.dateKey));
+  updateCount();
+}
+
+function toggleAll(checked){
+  if(!activeEmp)return;
+
+  selections[String(activeEmp.nip)]=checked
+    ?(activeEmp.details||[]).filter(d=>d.eligible).map(d=>d.dateKey)
+    :[];
+
+  openDetail(
+    candidates.employees.findIndex(
+      e=>String(e.nip)===String(activeEmp.nip)
+    )
+  );
+
+  updateCount();
+}
+
+function closeDetail(){
+  $('detailBg').classList.remove('open');
+
+  if(detailMode==='candidate'){
+    renderCandidates();
+  }else{
+    $('selectAllLabel').classList.remove('hidden');
+    detailMode='candidate';
+  }
+}
+
+function saveSelection(){
+  const b=$('saveBtn');
+  b.disabled=true;
+  b.textContent='Menyimpan…';
+
+  // MENGGUNAKAN FETCH API (PENGGANTI google.script.run)
+  fetchAppScript('saveOvertimeSelection', {
+    candidates: candidates.employees,
+    selections,
+    year: candidates.year,
+    month: candidates.month,
+    fileName: candidates.fileName
+  }).then(r => {
+    b.disabled=false;
+    b.textContent='Simpan Pilihan & Tampilkan Rekap →';
+
+    finalData=r;
+    closeSelection();
+    renderFinal();
+    $('results').classList.remove('hidden');
+
+    $('status').className='status show success';
+    $('status').innerHTML=
+      'Pilihan tersimpan dan rekap akhir diperbarui. '+
+      '<a href="'+esc(r.historyUrl||'#')+
+      '" target="_blank" rel="noopener">Buka Riwayat Google Sheets</a>';
+
+    $('results').scrollIntoView({behavior:'smooth',block:'start'});
+    loadHistory();
+  }).catch(err => {
+    b.disabled=false;
+    b.textContent='Simpan Pilihan & Tampilkan Rekap →';
+    showStatus(err.message||'Pilihan gagal disimpan.','error');
+  });
+}
+
+function renderFinal(){
+  const s=finalData.summary||{};
+
+  $('stats').innerHTML=[
+    ['Pegawai terpilih',s.employeeCount||0,'pegawai masuk rekap'],
+    ['Hari biasa',s.ordinaryDays||0,'tanggal terpilih'],
+    ['Hari libur',s.holidayDays||0,'tanggal terpilih'],
+    ['Total jam penuh',hours(s.totalWholeHours||0),'durasi total setelah penyesuaian']
+  ].map(x=>
+    `<div class="stat"><div class="k">${x[0]}</div><div class="v">${x[1]}</div><div class="hint">${x[2]}</div></div>`
+  ).join('');
+
+  renderEmployees();
+  renderBackoffice();
+  renderWeb();
+}
+
+function renderEmployees(){
+  const es=finalData.employees||[];
+
+  if(!es.length){
+    $('employeeTable').innerHTML=
+      '<div class="empty">Belum ada pegawai/tanggal yang dipilih. Klik Ubah Pilihan.</div>';
+    return;
+  }
+
+  $('employeeTable').innerHTML=
+    '<table><thead><tr><th>No.</th><th>NIP</th><th>Nama Pegawai</th>'+
+    '<th class="num">Hari Biasa</th><th class="num">Hari Libur</th>'+
+    '<th class="num">Total Hari</th><th class="num">Jam Penuh</th><th>Rincian</th>'+
+    '</tr></thead><tbody>'+
+    es.map((e,i)=>`<tr>
+      <td>${i+1}</td><td>${esc(e.nip)}</td><td><b>${esc(e.name)}</b></td>
+      <td class="num">${e.ordinaryDays}</td><td class="num">${e.holidayDays}</td>
+      <td class="num">${e.totalDays}</td>
+      <td class="num"><span class="hours">${hours(e.totalWholeHours)}</span></td>
+      <td><button class="btn secondary" style="padding:8px 10px" onclick="showFinalDetail(${i})">Lihat rincian</button></td>
+    </tr>`).join('')+'</tbody></table>';
+}
+
+function showFinalDetail(i){
+  const e=finalData.employees[i];
+  activeEmp=e;
+  detailMode='final';
+
+  $('selectAllLabel').classList.add('hidden');
+  $('detailTitle').textContent='Rincian Terpilih — '+e.name;
+  $('detailSub').textContent='NIP '+e.nip+' • hanya tanggal disetujui';
+  $('detailTotal').textContent='Total '+hours(e.totalWholeHours);
+
+  $('detailDays').innerHTML=(e.details||[]).map(d=>`
+    <div class="day-card"><span style="flex:1">
+      <span class="date-main">${esc(d.dayName)}, ${esc(d.date)}</span>
+      <span class="date-meta">
+        ${d.holiday?'<span class="badge holiday">Hari libur</span>':'<span class="badge">Hari biasa</span>'}
+        <br>Masuk ${esc(d.checkIn||'—')} · Pulang ${esc(d.checkOut||'—')}
+        <br>Jam bruto: <b>${Number(d.grossWholeHours||0)} jam</b>
+        <br>Pengurangan istirahat: <b>${Number(d.breakDeductionHours||0)} jam</b>
+        <br><span class="adjustment">Hasil setelah penyesuaian: ${Number(d.adjustedWholeHours||0)} jam</span>
+      </span></span><span class="day-hours">${hours(Number(d.adjustedWholeHours||0))}</span>
+    </div>`).join('')||'<div class="empty">Tidak ada rincian.</div>';
+
+  $('detailBg').classList.add('open');
+}
+
+function renderBackoffice(){
+  const d=finalData.rekapBackoffice||{columns:[],rows:[]};
+  const cs=d.columns||[];
+  const rs=d.rows||[];
+
+  if(!rs.length||!cs.length){
+    $('backofficeTable').innerHTML=
+      '<div class="empty">Belum ada data bucket HB/HL untuk direkap.</div>';
+    return;
+  }
+
+  $('backofficeTable').innerHTML=
+    '<table><thead><tr><th>NIP</th><th>Nama Pegawai</th>'+
+    cs.map(c=>`<th class="num">${esc(c.label)}</th>`).join('')+
+    '</tr></thead><tbody>'+
+    rs.map(r=>
+      '<tr><td>'+esc(r.nip)+'</td><td><b>'+esc(r.name)+'</b></td>'+
+      cs.map(c=>
+        `<td class="num">${r[c.key]?`<span class="hours">${esc(r[c.key])}</span>`:'—'}</td>`
+      ).join('')+
+      '</tr>'
+    ).join('')+
+    '</tbody></table>';
+}
+
+function renderWeb(){
+  const d=finalData.rekapWEB||{columns:[],rows:[]};
+  const cs=d.columns||[];
+  const rs=d.rows||[];
+
+  if(!rs.length){
+    $('webTable').innerHTML='<div class="empty">Belum ada data WEB GAJI.</div>';
+    return;
+  }
+
+  $('webTable').innerHTML=
+    '<table><thead><tr><th>NIP</th><th>Nama Pegawai</th>'+
+    cs.map(c=>
+      `<th class="num" title="${esc(c.fullLabel)}">${esc(c.label)}</th>`
+    ).join('')+
+    '</tr></thead><tbody>'+
+    rs.map(r=>
+      '<tr><td>'+esc(r.nip)+'</td><td><b>'+esc(r.name)+'</b></td>'+
+      cs.map(c=>{
+        const v=r[c.key];
+        return `<td class="num">${v==null?'—':`<span class="hours">${esc(v)}</span>`}</td>`;
+      }).join('')+
+      '</tr>'
+    ).join('')+
+    '</tbody></table>';
+}
+
+function loadHistory(){
+  $('historyStatus').textContent='Memuat daftar riwayat…';
+
+  // MENGGUNAKAN FETCH API (PENGGANTI google.script.run)
+  fetchAppScript('getOvertimeHistory').then(r => {
+    const items=r.history||[];
+
+    $('historyStatus').textContent=items.length
+      ?`${items.length} proses rekap ditemukan.`
+      :'Belum ada riwayat proses lembur.';
+
+    $('historyList').innerHTML=items.map(item=>{
+      const date=item.created
+        ?new Date(item.created).toLocaleString('id-ID')
+        :'Waktu tidak tersedia';
+
+      const period=[item.monthName,item.year].filter(Boolean).join(' ');
+      const meta=[
+        period,
+        `${item.employeeCount===''?'—':item.employeeCount} pegawai`,
+        `${item.totalHours===''?'—':item.totalHours} jam setelah penyesuaian`,
+        date
+      ].join(' • ');
+
+      const busy=deletingHistoryIds.has(item.id);
+
+      return `<article class="history-item" data-history-id="${esc(item.id)}">
+        <div>
+          <h3>${esc(item.name)}</h3>
+          <div class="history-meta">${esc(meta)}</div>
+        </div>
+        <div class="history-actions">
+          <button class="btn primary" onclick="openHistoryResult('${esc(item.id)}','${esc(item.url)}','${esc(item.name)}')">Buka hasil rekap</button>
+          <button class="btn ghost" onclick="openHistorySheet('${esc(item.url)}')">Buka Google Sheets ↗</button>
+          <button class="btn danger" data-delete-history="${esc(item.id)}"
+            onclick="deleteHistory('${esc(item.id)}',this)" ${busy?'disabled':''}>
+            ${busy?'Menghapus…':'Hapus'}
+          </button>
+        </div>
+      </article>`;
+    }).join('');
+
+    $('historyResult').classList.add('hidden');
+  }).catch(err => {
+    $('historyStatus').textContent=err.message||'Riwayat tidak dapat dimuat.';
+    $('historyList').innerHTML='';
+  });
+}
+
+function deleteHistory(id,button){
+  if(!id)return;
+
+  const confirmed=window.confirm(
+    'Apakah Anda yakin ingin menghapus riwayat ini?\n\n'+
+    'File Google Sheets yang terkait juga akan dipindahkan ke Sampah Google Drive.\n'+
+    'Tindakan ini akan menghilangkan riwayat dari daftar aplikasi.'
+  );
+
+  if(!confirmed)return;
+  if(deletingHistoryIds.has(id))return;
+
+  deletingHistoryIds.add(id);
+
+  const oldText=button?button.textContent:'Hapus';
+  if(button){
+    button.disabled=true;
+    button.textContent='Menghapus…';
+  }
+
+  // MENGGUNAKAN FETCH API (PENGGANTI google.script.run)
+  fetchAppScript('deleteOvertimeHistory', { id }).then(r => {
+    deletingHistoryIds.delete(id);
+    const card=document.querySelector(
+      `[data-history-id="${CSS.escape(id)}"]`
+    );
+    if(card)card.remove();
+
+    $('historyResult').classList.add('hidden');
+    $('historyStatus').textContent=
+      'Riwayat berhasil dihapus. Memperbarui daftar…';
+
+    loadHistory();
+  }).catch(err => {
+    deletingHistoryIds.delete(id);
+    if(button){
+      button.disabled=false;
+      button.textContent=oldText;
+    }
+    window.alert(err.message||'Terjadi kesalahan saat menghapus riwayat.');
+  });
+}
+
+function openHistorySheet(url){
+  if(url)window.open(url,'_blank','noopener');
+}
+
+function openHistoryResult(id,url,name){
+  $('historyResult').classList.remove('hidden');
+  $('historyResultTitle').textContent=name||'Hasil Riwayat';
+  $('historyResultSub').textContent='Memuat hasil rekap yang tersimpan…';
+  $('historyStats').innerHTML='';
+  $('historyEmployeeTable').innerHTML='<div class="empty">Memuat hasil…</div>';
+  $('historyBackofficeTable').innerHTML='';
+  $('historyWebTable').innerHTML='';
+
+  // MENGGUNAKAN FETCH API (PENGGANTI google.script.run)
+  fetchAppScript('getOvertimeHistoryDetails', { id }).then(r => {
+    $('historyResultTitle').textContent=r.name||name||'Hasil Riwayat';
+    $('historyResultSub').textContent=
+      'Hasil rekap lama ditampilkan sesuai data yang tersimpan.';
+    $('historySheetLink').href=r.url||url||'#';
+
+    const sum={};
+    (r.summary||[]).forEach(row=>{
+      if(row&&row.length>1){
+        sum[String(row[0]).trim().toLowerCase()]=row[1];
+      }
+    });
+
+    const stats=[
+      ['Pegawai terpilih',sum['jumlah pegawai']||0,'pegawai masuk rekap'],
+      ['Hari biasa',sum['total hari biasa']||0,'tanggal terpilih'],
+      ['Hari libur',sum['total hari libur']||0,'tanggal terpilih'],
+      ['Total jam penuh',`${sum['total jam setelah penyesuaian']||0} jam`,'setelah penyesuaian']
+    ];
+
+    $('historyStats').innerHTML=stats.map(x=>`
+      <div class="stat"><div class="k">${esc(x[0])}</div><div class="v">${esc(x[1])}</div><div class="hint">${esc(x[2])}</div></div>
+    `).join('');
+
+    const details=r.details||[];
+    const head=details[0]||[];
+    const rows=details.slice(1);
+    const idx={};
+
+    head.forEach((h,i)=>{
+      idx[String(h).trim().toLowerCase()]=i;
+    });
+
+    const get=(row,key)=>row[idx[key]]==null?'':row[idx[key]];
+    const grouped={};
+
+    rows.forEach(row=>{
+      const nip=String(get(row,'nip'));
+      const name=String(get(row,'nama pegawai'));
+      const key=nip+'|'+name;
+
+      if(!grouped[key]){
+        grouped[key]={
+          nip,name,ordinaryDays:0,holidayDays:0,
+          totalDays:0,totalWholeHours:0,details:[]
+        };
+      }
+
+      const emp=grouped[key];
+      const holiday=String(get(row,'jenis hari')).toLowerCase().includes('libur');
+      const gross=Number(get(row,'jam bruto')||0);
+      const deduction=Number(get(row,'pengurangan istirahat')||0);
+      const adjusted=Number(get(row,'jam setelah penyesuaian')||0);
+
+      emp.totalDays++;
+      if(holiday)emp.holidayDays++;
+      else emp.ordinaryDays++;
+
+      emp.totalWholeHours+=adjusted;
+
+      emp.details.push({
+        date:get(row,'tanggal'),
+        dayName:get(row,'nama hari'),
+        holiday,
+        checkIn:get(row,'jam masuk'),
+        checkOut:get(row,'jam pulang'),
+        grossWholeHours:gross,
+        breakDeductionHours:deduction,
+        adjustedWholeHours:adjusted
+      });
+    });
+
+    const emps=Object.values(grouped);
+
+    $('historyEmployeeTable').innerHTML=emps.length
+      ?'<table><thead><tr><th>No.</th><th>NIP</th><th>Nama Pegawai</th>'+
+        '<th class="num">Hari Biasa</th><th class="num">Hari Libur</th>'+
+        '<th class="num">Total Hari</th><th class="num">Jam Penuh</th><th>Rincian</th>'+
+        '</tr></thead><tbody>'+
+        emps.map((e,i)=>`<tr>
+          <td>${i+1}</td><td>${esc(e.nip)}</td><td><b>${esc(e.name)}</b></td>
+          <td class="num">${e.ordinaryDays}</td><td class="num">${e.holidayDays}</td>
+          <td class="num">${e.totalDays}</td><td class="num"><span class="hours">${e.totalWholeHours} jam</span></td>
+          <td><button class="btn secondary" style="padding:8px 10px" onclick="showHistoryDetail(${i})">Lihat rincian</button></td>
+        </tr>`).join('')+'</tbody></table>'
+      :'<div class="empty">Detail pegawai tidak ditemukan di file riwayat.</div>';
+
+    window._historyEmployees=emps;
+    $('historyBackofficeTable').innerHTML=historyArrayTable(r.backoffice);
+    $('historyWebTable').innerHTML=historyArrayTable(r.webGaji);
+
+    $('historyResult').scrollIntoView({behavior:'smooth',block:'start'});
+  }).catch(err => {
+    $('historyResultSub').textContent=
+      err.message||'Hasil riwayat tidak dapat dibuka.';
+  });
+}
+
+function historyArrayTable(rows){
+  if(!rows||!rows.length){
+    return '<div class="empty">Tidak ada data.</div>';
+  }
+
+  return `<div class="table-wrap"><table>
+    <thead><tr>${(rows[0]||[]).map(v=>`<th>${esc(v)}</th>`).join('')}</tr></thead>
+    <tbody>${rows.slice(1).map(row=>
+      `<tr>${row.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`
+    ).join('')||
+      `<tr><td colspan="${Math.max(1,rows[0].length)}">Tidak ada baris data.</td></tr>`}
+    </tbody></table></div>`;
+}
+
+function showHistoryDetail(i){
+  const e=(window._historyEmployees||[])[i];
+  if(!e)return;
+
+  activeEmp=e;
+  detailMode='history';
+
+  $('selectAllLabel').classList.add('hidden');
+  $('detailTitle').textContent='Rincian Terpilih — '+e.name;
+  $('detailSub').textContent='NIP '+e.nip+' • riwayat proses tersimpan';
+  $('detailTotal').textContent='Total '+hours(e.totalWholeHours);
+
+  $('detailDays').innerHTML=e.details.map(d=>`
+    <div class="day-card"><span style="flex:1">
+      <span class="date-main">${esc(d.dayName)}, ${esc(d.date)}</span>
+      <span class="date-meta">
+        ${d.holiday?'<span class="badge holiday">Hari libur</span>':'<span class="badge">Hari biasa</span>'}
+        <br>Masuk ${esc(d.checkIn||'—')} · Pulang ${esc(d.checkOut||'—')}
+        <br>Jam bruto: <b>${d.grossWholeHours} jam</b>
+        <br>Pengurangan istirahat: <b>${d.breakDeductionHours} jam</b>
+        <br><span class="adjustment">Hasil setelah penyesuaian: ${d.adjustedWholeHours} jam</span>
+      </span></span><span class="day-hours">${hours(d.adjustedWholeHours)}</span>
+    </div>`).join('')||'<div class="empty">Tidak ada rincian.</div>';
+
+  $('detailBg').classList.add('open');
+}
+
+function csv(rows){
+  return rows.map(r=>
+    r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')
+  ).join('\r\n');
+}
+
+function download(name,rows){
+  const blob=new Blob(['\ufeff'+csv(rows)],{
+    type:'text/csv;charset=utf-8;'
+  });
+
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=name;
+  a.click();
+
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function exportEmployees(){
+  if(!finalData)return;
+
+  download(`Rincian_Pegawai_${finalData.monthName}_${finalData.year}.csv`,[
+    ['NIP','Nama Pegawai','Hari Biasa','Hari Libur','Total Hari','Jam Penuh'],
+    ...(finalData.employees||[]).map(e=>[
+      e.nip,e.name,e.ordinaryDays,e.holidayDays,e.totalDays,e.totalWholeHours
+    ])
+  ]);
+}
+
+function exportBackoffice(){
+  if(!finalData)return;
+
+  const d=finalData.rekapBackoffice||{columns:[],rows:[]};
+  const cs=d.columns||[];
+
+  download(`Rekap_Backoffice_${finalData.monthName}_${finalData.year}.csv`,[
+    ['NIP','Nama Pegawai',...cs.map(c=>c.label)],
+    ...(d.rows||[]).map(r=>[
+      r.nip,r.name,...cs.map(c=>r[c.key]||'')
+    ])
+  ]);
+}
+
+function exportWeb(){
+  if(!finalData)return;
+
+  const d=finalData.rekapWEB||{columns:[],rows:[]};
+  const cs=d.columns||[];
+
+  download(`Rekap_WEB_GAJI_${finalData.monthName}_${finalData.year}.csv`,[
+    ['NIP','Nama Pegawai',...cs.map(c=>c.fullLabel||c.label)],
+    ...(d.rows||[]).map(r=>[
+      r.nip,r.name,...cs.map(c=>r[c.key]??'')
+    ])
+  ]);
+}
+</script>
+</body>
+</html>
