@@ -546,6 +546,17 @@
       background:#f5fcfa
     }
 
+    /* Sabtu/Minggu pada rekap uang makan */
+    .meal-weekend{
+      background:#fff2cc !important;
+      color:#7a5a00 !important;
+    }
+
+    .meal-weekend .meal-one{
+      background:transparent;
+      color:#7a5a00;
+    }
+
     .num{
       text-align:center;
       font-variant-numeric:tabular-nums
@@ -1473,7 +1484,7 @@
               </h2>
 
               <div class="sub">
-                Status WFO, WFOL, dan WFH dihitung sebagai 1. Sabtu dan Minggu tidak direkap.
+                Status WFO, WFOL, dan WFH dihitung sebagai 1. Sabtu dan Minggu tetap ditampilkan sebagai kolom, tetapi dikosongkan dan tidak dihitung.
               </div>
 
             </div>
@@ -4779,7 +4790,7 @@ function openMealSelection() {
     `${mealCandidates.monthName} ${mealCandidates.year} • ${mealCandidates.fileName}`;
 
   $('selectionInfo').textContent =
-    'Centang tanggal dengan status WFO, WFOL, atau WFH. Sabtu dan Minggu otomatis tidak tersedia. Setiap tanggal terpilih bernilai 1.';
+    'Centang tanggal dengan status WFO, WFOL, atau WFH. Sabtu dan Minggu tetap ditampilkan sebagai penanda kalender, tetapi tidak dapat dipilih dan tidak dihitung. Setiap tanggal kerja terpilih bernilai 1.';
 
   $('saveBtn').className =
     'btn meal';
@@ -5163,7 +5174,7 @@ function openMealDetail(
     ' • pilih tanggal';
 
   $('detailHelp').textContent =
-    'Hanya hari Senin–Jumat yang ditampilkan. WFO, WFOL, dan WFH bernilai 1. Status lain tidak masuk rekap.';
+    'Hari kerja ditampilkan sebagai tanggal yang dapat dipilih. Sabtu/Minggu tidak dapat dipilih. WFO, WFOL, dan WFH bernilai 1; status lain tidak masuk rekap.';
 
   const ds =
     (
@@ -5239,6 +5250,21 @@ function openMealDetail(
                     d.status
                   )}
                 </span>
+
+                <br>
+
+                Jam kerja:
+                <b>
+                  ${esc(
+                    d.workHours ||
+                    (
+                      d.checkIn &&
+                      d.checkOut
+                        ? d.checkIn + ' - ' + d.checkOut
+                        : '—'
+                    )
+                  )}
+                </b>
 
                 <br>
 
@@ -5627,8 +5653,13 @@ function renderMealTable() {
               c =>
                 `
                 <th
-                  class="num"
+                  class="num ${
+                    c.weekend
+                      ? 'meal-weekend'
+                      : ''
+                  }"
                   title="${esc(
+                    c.date ||
                     c.fullLabel
                   )}">
 
@@ -5661,11 +5692,18 @@ function renderMealTable() {
               cs.forEach(
                 c => {
 
-                  total +=
-                    Number(
-                      r[c.key] ||
-                      0
-                    );
+                  if (
+                    !c.weekend
+                  ) {
+
+                    total +=
+                      Number(
+                        r[
+                          c.key
+                        ] ||
+                        0
+                      );
+                  }
                 }
               );
 
@@ -5691,8 +5729,21 @@ function renderMealTable() {
                   cs.map(
                     c => {
 
+                      if (
+                        c.weekend
+                      ) {
+
+                        return `
+                          <td class="num meal-weekend">
+                            &nbsp;
+                          </td>
+                        `;
+                      }
+
                       const v =
-                        r[c.key];
+                        r[
+                          c.key
+                        ];
 
                       return `
                         <td class="num">
@@ -5733,6 +5784,7 @@ function renderMealTable() {
     </table>
     `;
 }
+
 
 
 function renderMealSummary() {
@@ -7316,6 +7368,41 @@ function renderMealHistoryRekap(
     return;
   }
 
+  // Header tanggal menggunakan format "01 Minggu", "02 Senin", dst.
+  // Sabtu/Minggu diberi warna kuning.
+  const weekendIndexes =
+    new Set();
+
+  (
+    rows[0] ||
+    []
+  ).forEach(
+    (v, i) => {
+
+      if (
+        i < 2
+      ) {
+        return;
+      }
+
+      const label =
+        String(
+          v ||
+          ''
+        ).toLowerCase();
+
+      if (
+        /(sabtu|minggu)/.test(
+          label
+        )
+      ) {
+        weekendIndexes.add(
+          i
+        );
+      }
+    }
+  );
+
   $('mealHistoryTable').innerHTML =
     `
     <table>
@@ -7327,8 +7414,21 @@ function renderMealHistoryRekap(
           ${
             rows[0]
               .map(
-                v =>
-                  `<th>${esc(v)}</th>`
+                (v, i) =>
+                  `
+                  <th
+                    class="${
+                      weekendIndexes.has(
+                        i
+                      )
+                        ? 'meal-weekend'
+                        : ''
+                    }">
+                    ${esc(
+                      v
+                    )}
+                  </th>
+                  `
               )
               .join('')
           }
@@ -7340,59 +7440,70 @@ function renderMealHistoryRekap(
       <tbody>
 
         ${
-          rows.slice(
-            1
-          ).map(
-            row => {
+          rows
+            .slice(
+              1
+            )
+            .map(
+              row => {
 
-              return `
-              <tr>
+                return `
+                <tr>
 
-                ${
-                  row.map(
-                    (v, i) => {
+                  ${
+                    row.map(
+                      (v, i) => {
 
-                      /*
-                       * Kolom pertama = NIP
-                       * kolom kedua = Nama
-                       * sisanya tanggal.
-                       */
+                        const weekend =
+                          weekendIndexes.has(
+                            i
+                          );
 
-                      const numeric =
-                        i >= 2 &&
-                        String(
-                          v
-                        ).trim() ===
-                          '1';
+                        const numeric =
+                          i >= 2 &&
+                          String(
+                            v
+                          ).trim() ===
+                            '1';
 
-                      return `
-                        <td
-                          class="${
-                            i >= 2
-                              ? 'num'
-                              : ''
-                          }">
+                        return `
+                          <td
+                            class="${
+                              i >= 2
+                                ? 'num'
+                                : ''
+                            } ${
+                              weekend
+                                ? 'meal-weekend'
+                                : ''
+                            }">
 
-                          ${
-                            numeric
-                              ? `
-                                <span class="meal-one">
-                                  1
-                                </span>
-                                `
-                              : esc(v)
-                          }
+                            ${
+                              weekend
+                                ? '&nbsp;'
+                                : (
+                                    numeric
+                                      ? `
+                                        <span class="meal-one">
+                                          1
+                                        </span>
+                                        `
+                                      : esc(
+                                          v
+                                        )
+                                  )
+                            }
 
-                        </td>
-                      `;
-                    }
-                  ).join('')
-                }
+                          </td>
+                        `;
+                      }
+                    ).join('')
+                  }
 
-              </tr>
-              `;
-            }
-          ).join('')
+                </tr>
+                `;
+              }
+            ).join('')
         }
 
       </tbody>
@@ -7400,6 +7511,7 @@ function renderMealHistoryRekap(
     </table>
     `;
 }
+
 
 
 function renderMealHistoryDetails(
@@ -7770,17 +7882,23 @@ function exportMeal() {
               c => {
 
                 const v =
-                  Number(
-                    r[c.key] ||
-                    0
-                  );
+                  c.weekend
+                    ? 0
+                    : Number(
+                        r[c.key] ||
+                        0
+                      );
 
                 total +=
                   v;
 
-                return v
-                  ? 1
-                  : '';
+                return c.weekend
+                  ? ''
+                  : (
+                      v
+                        ? 1
+                        : ''
+                    );
               }
             );
 
