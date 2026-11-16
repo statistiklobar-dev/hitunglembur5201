@@ -1605,6 +1605,14 @@
 
                 </button>
 
+                <button
+                  class="btn ghost"
+                  onclick="exportMealTxt()">
+
+                  Ekspor TXT
+
+                </button>
+
               </div>
 
             </div>
@@ -7638,6 +7646,57 @@ function download(
 }
 
 
+function downloadTxt(
+  name,
+  textContent
+) {
+
+  const blob =
+    new Blob(
+      [
+        '﻿' +
+        String(textContent || '')
+      ],
+      {
+        type:
+          'text/plain;charset=utf-8;'
+      }
+    );
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+  const a =
+    document.createElement(
+      'a'
+    );
+
+  a.href =
+    url;
+
+  a.download =
+    name;
+
+  document.body.appendChild(
+    a
+  );
+
+  a.click();
+
+  a.remove();
+
+  setTimeout(
+    () =>
+      URL.revokeObjectURL(
+        url
+      ),
+    1000
+  );
+}
+
+
 /* ============================================================
  * EXPORT LEMBUR
  * ============================================================ */
@@ -7858,6 +7917,91 @@ function exportMeal() {
         }
       )
     ]
+  );
+}
+
+
+function exportMealTxt() {
+
+  if (!mealFinalData) {
+    return;
+  }
+
+  const d =
+    mealFinalData.rekap ||
+    {
+      columns: [],
+      rows: []
+    };
+
+  const cs =
+    d.columns ||
+    [];
+
+  const lines = [];
+
+  lines.push(
+    'REKAP UANG MAKAN',
+    'Periode: ' +
+      String(mealFinalData.monthName || '') +
+      ' ' +
+      String(mealFinalData.year || ''),
+    'Sumber: ' +
+      String(mealFinalData.fileName || ''),
+    ''
+  );
+
+  lines.push(
+    [
+      'NIP',
+      'Nama Pegawai',
+      ...cs.map(c => c.fullLabel || c.label),
+      'Total'
+    ].join('\t')
+  );
+
+  (d.rows || []).forEach(
+    r => {
+
+      let total = 0;
+
+      const values =
+        cs.map(
+          c => {
+            if (c.weekend) {
+              return '';
+            }
+
+            const v =
+              Number(
+                r[c.key] ||
+                0
+              );
+
+            total += v;
+
+            return v ? '1' : '';
+          }
+        );
+
+      lines.push(
+        [
+          r.nip,
+          r.name,
+          ...values,
+          total
+        ].map(
+          v => String(
+            v == null ? '' : v
+          ).replace(/[\t\r\n]+/g, ' ')
+        ).join('\t')
+      );
+    }
+  );
+
+  downloadTxt(
+    `Rekap_Uang_Makan_${mealFinalData.monthName}_${mealFinalData.year}.txt`,
+    lines.join('\r\n')
   );
 }
 
