@@ -7928,83 +7928,55 @@ function exportMealTxt() {
   }
 
   const d =
-    mealFinalData.rekap ||
-    {
+    mealFinalData.rekap || {
       columns: [],
       rows: []
     };
 
   const cs =
-    d.columns ||
-    [];
+    d.columns || [];
 
+  const year = Number(mealFinalData.year || 0);
+  const month = Number(mealFinalData.month || 0);
   const lines = [];
 
-  lines.push(
-    'REKAP UANG MAKAN',
-    'Periode: ' +
-      String(mealFinalData.monthName || '') +
-      ' ' +
-      String(mealFinalData.year || ''),
-    'Sumber: ' +
-      String(mealFinalData.fileName || ''),
-    ''
-  );
+  // Format tanggal: yyyy-mm-dd
+  function formatDate_(day) {
+    return [
+      String(year),
+      String(month).padStart(2, '0'),
+      String(day).padStart(2, '0')
+    ].join('-');
+  }
 
-  lines.push(
-    [
-      'NIP',
-      'Nama Pegawai',
-      ...cs.map(c => c.fullLabel || c.label),
-      'Total'
-    ].join('\t')
-  );
+  // Hanya keluarkan data yang benar-benar bernilai 1,
+  // yaitu tanggal yang terhitung sebagai uang makan.
+  (d.rows || []).forEach(function (r) {
 
-  (d.rows || []).forEach(
-    r => {
+    cs.forEach(function (c) {
 
-      let total = 0;
+      if (c.weekend) {
+        return;
+      }
 
-      const values =
-        cs.map(
-          c => {
-            if (c.weekend) {
-              return '';
-            }
+      const value = Number(r[c.key] || 0);
 
-            const v =
-              Number(
-                r[c.key] ||
-                0
-              );
-
-            total += v;
-
-            return v ? '1' : '';
-          }
+      if (value === 1) {
+        lines.push(
+          [
+            String(r.nip || '').trim(),
+            formatDate_(c.day)
+          ].join('\t')
         );
-
-      lines.push(
-        [
-          r.nip,
-          r.name,
-          ...values,
-          total
-        ].map(
-          v => String(
-            v == null ? '' : v
-          ).replace(/[\t\r\n]+/g, ' ')
-        ).join('\t')
-      );
-    }
-  );
+      }
+    });
+  });
 
   downloadTxt(
-    `Rekap_Uang_Makan_${mealFinalData.monthName}_${mealFinalData.year}.txt`,
+    `Uang_Makan_${mealFinalData.monthName}_${mealFinalData.year}.txt`,
     lines.join('\r\n')
   );
 }
-
 
 /* ============================================================
  * OVERRIDE SAVE SELECTION
