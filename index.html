@@ -546,17 +546,6 @@
       background:#f5fcfa
     }
 
-    /* Sabtu/Minggu pada rekap uang makan */
-    .meal-weekend{
-      background:#fff2cc !important;
-      color:#7a5a00 !important;
-    }
-
-    .meal-weekend .meal-one{
-      background:transparent;
-      color:#7a5a00;
-    }
-
     .num{
       text-align:center;
       font-variant-numeric:tabular-nums
@@ -582,6 +571,18 @@
         #076b65;
       border-radius:7px;
       font-weight:900
+    }
+
+    /* Sabtu/Minggu pada rekap uang makan tetap tampil sebagai kolom,
+       tetapi kosong dan diberi penanda kuning. */
+    .meal-weekend{
+      background:#fff2cc !important;
+      color:#7a5a00 !important;
+    }
+
+    .meal-weekend .meal-one{
+      background:transparent;
+      color:#7a5a00;
     }
 
     .empty{
@@ -1484,7 +1485,7 @@
               </h2>
 
               <div class="sub">
-                Status WFO, WFOL, dan WFH dihitung sebagai 1. Sabtu dan Minggu tetap ditampilkan sebagai kolom, tetapi dikosongkan dan tidak dihitung.
+                Status WFO, WFOL, dan WFH dihitung sebagai 1. Sabtu dan Minggu tidak direkap.
               </div>
 
             </div>
@@ -1601,14 +1602,6 @@
                   onclick="exportMeal()">
 
                   Ekspor CSV
-
-                </button>
-
-                <button
-                  class="btn meal-secondary"
-                  onclick="exportMealTxt()">
-
-                  Ekspor TXT
 
                 </button>
 
@@ -4798,7 +4791,7 @@ function openMealSelection() {
     `${mealCandidates.monthName} ${mealCandidates.year} • ${mealCandidates.fileName}`;
 
   $('selectionInfo').textContent =
-    'Pilih pegawai dan tanggal langsung pada tabel. Kolom tanggal berisi hari kerja yang memiliki status WFO, WFOL, atau WFH. Sabtu dan Minggu tidak dihitung.';
+    'Centang pegawai. Saat pegawai dipilih, seluruh tanggal yang memenuhi syarat otomatis ikut terpilih. Gunakan tombol Pilih Semua Pegawai untuk memilih seluruh pegawai sekaligus. Sabtu dan Minggu tetap ditampilkan sebagai tanggal kalender, tetapi tidak dihitung.';
 
   $('saveBtn').className =
     'btn meal';
@@ -4849,89 +4842,39 @@ function renderMealCandidates() {
 
   } else {
 
-    /*
-     * Tabel pemilihan dibuat langsung dalam bentuk matriks:
-     * baris = pegawai
-     * kolom = tanggal
-     * sel = checkbox tanggal yang akan direkap.
-     *
-     * Ini menggantikan pemilihan tanggal satu per satu melalui
-     * modal/detail sehingga lebih cepat untuk proses banyak pegawai.
-     */
-    const dateMap = new Map();
-
-    eligibleEmployees.forEach(
-      e => {
-        (e.details || []).forEach(
-          d => {
-            if (!dateMap.has(d.dateKey)) {
-              dateMap.set(d.dateKey, d);
-            }
-          }
-        );
-      }
-    );
-
-    const dates = Array.from(
-      dateMap.values()
-    ).sort(
-      (a, b) =>
-        String(a.dateKey).localeCompare(
-          String(b.dateKey)
-        )
-    );
-
     $('candidateTable').innerHTML =
       `
+      <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button
+          type="button"
+          class="btn meal-secondary"
+          onclick="toggleAllMealEmployees(true)">
+          ✓ Pilih Semua Pegawai
+        </button>
+      </div>
+
       <table class="meal-table">
 
         <thead>
 
           <tr>
 
-            <th style="position:sticky;left:0;z-index:4">
-              Pilih
+            <th>Pilih</th>
+
+            <th>NIP</th>
+
+            <th>Nama Pegawai</th>
+
+            <th class="num">
+              Hari Uang Makan
             </th>
-
-            <th style="position:sticky;left:55px;z-index:4">
-              NIP
-            </th>
-
-            <th style="position:sticky;left:180px;z-index:4">
-              Nama Pegawai
-            </th>
-
-            ${
-              dates.map(
-                d => {
-                  const selectedDate =
-                    new Date(
-                      Number(String(d.dateKey).slice(0,4)),
-                      Number(String(d.dateKey).slice(5,7)) - 1,
-                      Number(String(d.dateKey).slice(8,10))
-                    );
-
-                  return `
-                    <th
-                      class="num"
-                      title="${esc(d.date)}">
-                      ${esc(
-                        pad2Local(
-                          Number(String(d.dateKey).slice(-2))
-                        )
-                      )}
-                      <br>
-                      <span style="font-size:9px">
-                        ${esc(d.dayName)}
-                      </span>
-                    </th>
-                  `;
-                }
-              ).join('')
-            }
 
             <th class="num">
               Total
+            </th>
+
+            <th>
+              Aksi
             </th>
 
           </tr>
@@ -4942,33 +4885,34 @@ function renderMealCandidates() {
 
           ${
             eligibleEmployees.map(
-              e => {
+              (e, i) => {
 
                 const selected =
-                  new Set(
-                    mealChosen(e)
-                  );
+                  mealChosen(
+                    e
+                  ).length;
 
-                const available =
-                  (e.details || [])
-                    .filter(
-                      d =>
-                        d.hasWorkStatus
-                    );
+                const count =
+                  (
+                    e.details ||
+                    []
+                  ).filter(
+                    d =>
+                      d.hasWorkStatus
+                  ).length;
 
                 return `
+
                 <tr>
 
-                  <td
-                    style="position:sticky;left:0;background:#fff;z-index:3"
-                    class="num">
+                  <td>
 
                     <input
                       type="checkbox"
                       class="check meal-check mealCandidateCheck"
                       data-i="${es.indexOf(e)}"
                       ${
-                        selected.size
+                        selected
                           ? 'checked'
                           : ''
                       }
@@ -4976,89 +4920,47 @@ function renderMealCandidates() {
 
                   </td>
 
-                  <td
-                    style="position:sticky;left:55px;background:#fff;z-index:3">
-
-                    ${esc(e.nip)}
-
+                  <td>
+                    ${esc(
+                      e.nip
+                    )}
                   </td>
 
-                  <td
-                    style="position:sticky;left:180px;background:#fff;z-index:3">
-
+                  <td>
                     <b>
-                      ${esc(e.name)}
+                      ${esc(
+                        e.name
+                      )}
                     </b>
-
                   </td>
 
-                  ${
-                    dates.map(
-                      d => {
-
-                        const detail =
-                          (e.details || [])
-                            .find(
-                              x =>
-                                String(x.dateKey) ===
-                                String(d.dateKey)
-                            );
-
-                        const canSelect =
-                          Boolean(
-                            detail &&
-                            detail.hasWorkStatus
-                          );
-
-                        const isSelected =
-                          selected.has(
-                            d.dateKey
-                          );
-
-                        return `
-                          <td class="num">
-
-                            ${
-                              canSelect
-                                ? `
-                                  <input
-                                    type="checkbox"
-                                    class="check meal-check mealDayCheck"
-                                    data-nip="${esc(e.nip)}"
-                                    data-date="${esc(d.dateKey)}"
-                                    ${
-                                      isSelected
-                                        ? 'checked'
-                                        : ''
-                                    }
-                                    onchange="toggleMealDateByNip('${esc(e.nip)}','${esc(d.dateKey)}',this.checked)">
-                                  `
-                                : `
-                                  <span
-                                    style="color:#a5adba;font-size:10px"
-                                    title="${esc(detail ? detail.status : 'Tidak ada status')}">
-                                    —
-                                  </span>
-                                  `
-                            }
-
-                          </td>
-                        `;
-                      }
-                    ).join('')
-                  }
+                  <td class="num">
+                    ${count}
+                  </td>
 
                   <td class="num">
 
-                    <span
-                      class="meal-one meal-row-total"
-                      data-nip="${esc(e.nip)}">
-                      ${selected.size}
+                    <span class="meal-one">
+                      ${count}
                     </span>
 
                   </td>
 
+                  <td>
+
+                    <button
+                      class="btn meal-secondary"
+                      data-meal-details="${es.indexOf(e)}"
+                      style="padding:8px 10px">
+
+                      Lihat tanggal
+
+                    </button>
+
+                  </td>
+
                 </tr>
+
                 `;
               }
             ).join('')
@@ -5069,6 +4971,24 @@ function renderMealCandidates() {
       </table>
       `;
   }
+
+  $('candidateTable').onclick =
+    e => {
+
+      const b =
+        e.target.closest(
+          '[data-meal-details]'
+        );
+
+      if (b) {
+
+        openMealDetail(
+          Number(
+            b.dataset.mealDetails
+          )
+        );
+      }
+    };
 
   const ws =
     mealCandidates.warnings ||
@@ -5129,60 +5049,6 @@ function renderMealCandidates() {
 }
 
 
-function pad2Local(number) {
-  return String(number).padStart(2, '0');
-}
-
-
-function toggleMealDateByNip(
-  nip,
-  dateKey,
-  checked
-) {
-
-  const emp =
-    (
-      mealCandidates?.employees ||
-      []
-    ).find(
-      e =>
-        String(e.nip) ===
-        String(nip)
-    );
-
-  if (!emp) {
-    return;
-  }
-
-  const current =
-    new Set(
-      mealChosen(emp)
-    );
-
-  if (checked) {
-    current.add(dateKey);
-  } else {
-    current.delete(dateKey);
-  }
-
-  mealSelections[
-    String(emp.nip)
-  ] = Array.from(current);
-
-  const totalEl =
-    document.querySelector(
-      `.meal-row-total[data-nip="${CSS.escape(String(emp.nip))}"]`
-    );
-
-  if (totalEl) {
-    totalEl.textContent =
-      String(current.size);
-  }
-
-  updateMealCount();
-}
-
-
 function toggleMealEmp(
   i,
   checked
@@ -5212,6 +5078,36 @@ function toggleMealEmp(
       : [];
 
   updateMealCount();
+}
+
+
+function toggleAllMealEmployees(checked) {
+
+  const employees =
+    mealCandidates?.employees ||
+    [];
+
+  employees.forEach(e => {
+    const eligibleDates =
+      (e.details || [])
+        .filter(d => !d.weekend && d.hasWorkStatus)
+        .map(d => d.dateKey);
+
+    mealSelections[String(e.nip)] =
+      checked ? eligibleDates : [];
+  });
+
+  updateMealCount();
+
+  // Sinkronkan checkbox pegawai tanpa mengubah tampilan/modal lain.
+  document
+    .querySelectorAll('.mealCandidateCheck')
+    .forEach(c => {
+      const e = employees[Number(c.dataset.i)];
+      c.checked = checked
+        ? !!e && (e.details || []).some(d => !d.weekend && d.hasWorkStatus)
+        : false;
+    });
 }
 
 
@@ -5318,7 +5214,7 @@ function openMealDetail(
     ' • pilih tanggal';
 
   $('detailHelp').textContent =
-    'Hari kerja ditampilkan sebagai tanggal yang dapat dipilih. Sabtu/Minggu tidak dapat dipilih. WFO, WFOL, dan WFH bernilai 1; status lain tidak masuk rekap.';
+    'Saat pegawai dipilih, seluruh tanggal yang memenuhi syarat otomatis terpilih. WFO, WFOL, dan WFH bernilai 1. Sabtu/Minggu tidak dihitung. Jam masuk dan pulang ditampilkan pada setiap tanggal.';
 
   const ds =
     (
@@ -5397,20 +5293,7 @@ function openMealDetail(
 
                 <br>
 
-                Jam kerja:
-                <b>
-                  ${esc(
-                    d.workHours ||
-                    (
-                      d.checkIn &&
-                      d.checkOut
-                        ? d.checkIn + ' - ' + d.checkOut
-                        : '—'
-                    )
-                  )}
-                </b>
-
-                <br>
+                ${d.workHours ? `Jam kerja: <b>${esc(d.workHours)}</b><br>` : ''}
 
                 Nilai uang makan:
                 <b>
@@ -5697,16 +5580,14 @@ function renderMealFinal() {
 
       [
         'Total hari',
-        s.totalDays ||
-          s.totalWorkDays ||
+        s.totalWorkDays ||
           0,
         'hari WFO/WFOL/WFH'
       ],
 
       [
         'Total nilai',
-        s.totalMealRecords ||
-          s.totalMeal ||
+        s.totalMeal ||
           0,
         '1 per hari'
       ],
@@ -5754,7 +5635,6 @@ function renderMealFinal() {
 function renderMealTable() {
 
   const d =
-    mealFinalData.rekapUangMakan ||
     mealFinalData.rekap ||
     {
       columns: [],
@@ -5800,13 +5680,8 @@ function renderMealTable() {
               c =>
                 `
                 <th
-                  class="num ${
-                    c.weekend
-                      ? 'meal-weekend'
-                      : ''
-                  }"
+                  class="num ${c.weekend ? 'meal-weekend' : ''}"
                   title="${esc(
-                    c.date ||
                     c.fullLabel
                   )}">
 
@@ -5839,18 +5714,11 @@ function renderMealTable() {
               cs.forEach(
                 c => {
 
-                  if (
-                    !c.weekend
-                  ) {
-
-                    total +=
-                      Number(
-                        r[
-                          c.key
-                        ] ||
-                        0
-                      );
-                  }
+                  total +=
+                    Number(
+                      r[c.key] ||
+                      0
+                    );
                 }
               );
 
@@ -5876,33 +5744,22 @@ function renderMealTable() {
                   cs.map(
                     c => {
 
-                      if (
-                        c.weekend
-                      ) {
-
-                        return `
-                          <td class="num meal-weekend">
-                            &nbsp;
-                          </td>
-                        `;
-                      }
-
                       const v =
-                        r[
-                          c.key
-                        ];
+                        r[c.key];
 
                       return `
-                        <td class="num">
+                        <td class="num ${c.weekend ? 'meal-weekend' : ''}">
 
                           ${
-                            v
-                              ? `
-                                <span class="meal-one">
-                                  1
-                                </span>
-                                `
-                              : '—'
+                            c.weekend
+                              ? ''
+                              : (v
+                                  ? `
+                                    <span class="meal-one">
+                                      1
+                                    </span>
+                                    `
+                                  : '—')
                           }
 
                         </td>
@@ -5931,7 +5788,6 @@ function renderMealTable() {
     </table>
     `;
 }
-
 
 
 function renderMealSummary() {
@@ -7406,11 +7262,8 @@ function openMealHistoryResult(
             [
               'Total hari',
               sum[
-                'total hari/record uang makan'
+                'total hari kerja terpilih'
               ] ||
-                sum[
-                  'total hari kerja terpilih'
-                ] ||
                 0,
               'hari uang makan'
             ],
@@ -7418,11 +7271,8 @@ function openMealHistoryResult(
             [
               'Total nilai',
               sum[
-                'total hari/record uang makan'
+                'total uang makan'
               ] ||
-                sum[
-                  'total uang makan'
-                ] ||
                 0,
               'nilai 1 per hari'
             ],
@@ -7521,41 +7371,6 @@ function renderMealHistoryRekap(
     return;
   }
 
-  // Header tanggal menggunakan format "01 Minggu", "02 Senin", dst.
-  // Sabtu/Minggu diberi warna kuning.
-  const weekendIndexes =
-    new Set();
-
-  (
-    rows[0] ||
-    []
-  ).forEach(
-    (v, i) => {
-
-      if (
-        i < 2
-      ) {
-        return;
-      }
-
-      const label =
-        String(
-          v ||
-          ''
-        ).toLowerCase();
-
-      if (
-        /(sabtu|minggu)/.test(
-          label
-        )
-      ) {
-        weekendIndexes.add(
-          i
-        );
-      }
-    }
-  );
-
   $('mealHistoryTable').innerHTML =
     `
     <table>
@@ -7567,21 +7382,11 @@ function renderMealHistoryRekap(
           ${
             rows[0]
               .map(
-                (v, i) =>
-                  `
-                  <th
-                    class="${
-                      weekendIndexes.has(
-                        i
-                      )
-                        ? 'meal-weekend'
-                        : ''
-                    }">
-                    ${esc(
-                      v
-                    )}
-                  </th>
-                  `
+                (v, i) => {
+                  const weekend =
+                    i >= 2 && /\b(sabtu|minggu)\b/i.test(String(v));
+                  return `<th class="${weekend ? 'meal-weekend' : ''}">${esc(v)}</th>`;
+                }
               )
               .join('')
           }
@@ -7593,70 +7398,64 @@ function renderMealHistoryRekap(
       <tbody>
 
         ${
-          rows
-            .slice(
-              1
-            )
-            .map(
-              row => {
+          rows.slice(
+            1
+          ).map(
+            row => {
 
-                return `
-                <tr>
+              return `
+              <tr>
 
-                  ${
-                    row.map(
-                      (v, i) => {
+                ${
+                  row.map(
+                    (v, i) => {
 
-                        const weekend =
-                          weekendIndexes.has(
-                            i
-                          );
+                      /*
+                       * Kolom pertama = NIP
+                       * kolom kedua = Nama
+                       * sisanya tanggal.
+                       */
 
-                        const numeric =
-                          i >= 2 &&
-                          String(
-                            v
-                          ).trim() ===
-                            '1';
+                      const weekend =
+                        i >= 2 && /\b(sabtu|minggu)\b/i.test(String(rows[0][i] || ''));
+                      const numeric =
+                        i >= 2 &&
+                        !weekend &&
+                        String(
+                          v
+                        ).trim() ===
+                          '1';
 
-                        return `
-                          <td
-                            class="${
-                              i >= 2
-                                ? 'num'
-                                : ''
-                            } ${
-                              weekend
-                                ? 'meal-weekend'
-                                : ''
-                            }">
+                      return `
+                        <td
+                          class="${
+                            i >= 2
+                              ? 'num ' + (weekend ? 'meal-weekend' : '')
+                              : ''
+                          }">
 
-                            ${
-                              weekend
-                                ? '&nbsp;'
-                                : (
-                                    numeric
-                                      ? `
-                                        <span class="meal-one">
-                                          1
-                                        </span>
-                                        `
-                                      : esc(
-                                          v
-                                        )
-                                  )
-                            }
+                          ${
+                            weekend
+                              ? ''
+                              : (numeric
+                                  ? `
+                                    <span class="meal-one">
+                                      1
+                                    </span>
+                                    `
+                                  : esc(v))
+                          }
 
-                          </td>
-                        `;
-                      }
-                    ).join('')
-                  }
+                        </td>
+                      `;
+                    }
+                  ).join('')
+                }
 
-                </tr>
-                `;
-              }
-            ).join('')
+              </tr>
+              `;
+            }
+          ).join('')
         }
 
       </tbody>
@@ -7664,7 +7463,6 @@ function renderMealHistoryRekap(
     </table>
     `;
 }
-
 
 
 function renderMealHistoryDetails(
@@ -7759,100 +7557,6 @@ function renderMealHistoryDetails(
 
     </table>
     `;
-}
-
-
-/* ============================================================
- * EXPORT TXT UANG MAKAN
- * ============================================================ */
-
-function exportMealTxt() {
-
-  if (!mealFinalData) {
-    return;
-  }
-
-  const employees =
-    mealFinalData.employees ||
-    [];
-
-  const lines = [];
-
-  employees.forEach(
-    emp => {
-
-      (
-        emp.details ||
-        []
-      ).forEach(
-        d => {
-
-          if (
-            d.hasWorkStatus &&
-            d.dateKey
-          ) {
-
-            // Dua kolom: NIP dan tanggal yyyy-mm-dd.
-            // Dipisahkan TAB agar langsung terbaca sebagai 2 kolom.
-            lines.push(
-              `${String(emp.nip || '').trim()}\t${String(d.dateKey).trim()}`
-            );
-
-          }
-
-        }
-      );
-
-    }
-  );
-
-  if (!lines.length) {
-    window.alert(
-      'Tidak ada data uang makan yang dapat diekspor.'
-    );
-    return;
-  }
-
-  const content =
-    lines.join('\\r\\n') +
-    '\\r\\n';
-
-  const blob =
-    new Blob(
-      [content],
-      {
-        type:
-          'text/plain;charset=utf-8;'
-      }
-    );
-
-  const url =
-    URL.createObjectURL(
-      blob
-    );
-
-  const a =
-    document.createElement(
-      'a'
-    );
-
-  a.href =
-    url;
-
-  a.download =
-    `Uang_Makan_${mealFinalData.monthName}_${mealFinalData.year}.txt`;
-
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  setTimeout(
-    () =>
-      URL.revokeObjectURL(
-        url
-      ),
-    1000
-  );
 }
 
 
@@ -8090,7 +7794,6 @@ function exportMeal() {
   }
 
   const d =
-    mealFinalData.rekapUangMakan ||
     mealFinalData.rekap ||
     {
       columns: [],
@@ -8129,24 +7832,20 @@ function exportMeal() {
             cs.map(
               c => {
 
+                if (c.weekend) return '';
+
                 const v =
-                  c.weekend
-                    ? 0
-                    : Number(
-                        r[c.key] ||
-                        0
-                      );
+                  Number(
+                    r[c.key] ||
+                    0
+                  );
 
                 total +=
                   v;
 
-                return c.weekend
-                  ? ''
-                  : (
-                      v
-                        ? 1
-                        : ''
-                    );
+                return v
+                  ? 1
+                  : '';
               }
             );
 
